@@ -1,0 +1,380 @@
+-- SKYHUB Loader
+-- by lag
+
+local TweenService     = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players          = game:GetService("Players")
+
+local function tw(o, p, t, s)
+    TweenService:Create(o, TweenInfo.new(t or 0.2, s or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), p):Play()
+end
+
+local function new(cls, props)
+    local o = Instance.new(cls)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then o[k] = v end
+    end
+    o.Parent = props.Parent
+    return o
+end
+
+local function corner(p, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 5)
+    c.Parent = p
+end
+
+local function stroke(p, col, th)
+    local s = Instance.new("UIStroke")
+    s.Color = col or Color3.fromRGB(28, 44, 88)
+    s.Thickness = th or 1
+    s.Parent = p
+end
+
+local C = {
+    bg      = Color3.fromRGB(10, 13, 22),
+    sidebar = Color3.fromRGB(7,  9,  16),
+    elem    = Color3.fromRGB(14, 19, 36),
+    accent  = Color3.fromRGB(48, 120, 220),
+    accentD = Color3.fromRGB(20, 50, 110),
+    border  = Color3.fromRGB(28, 44, 88),
+    txt     = Color3.fromRGB(195, 215, 255),
+    txtdim  = Color3.fromRGB(70, 100, 160),
+    txtmut  = Color3.fromRGB(35, 55, 100),
+    white   = Color3.fromRGB(255, 255, 255),
+}
+
+-- ══════════════════════════
+--        INTRO SCREEN
+-- ══════════════════════════
+local introSg = new("ScreenGui", {
+    Parent = (gethui and gethui()) or game:GetService("CoreGui"),
+    Name = "skyhub_intro",
+    ZIndexBehavior = Enum.ZIndexBehavior.Global,
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true,
+})
+
+local introBg = new("Frame", {
+    Parent = introSg,
+    Size = UDim2.new(1, 0, 1, 0),
+    BackgroundColor3 = Color3.fromRGB(5, 7, 14),
+    BorderSizePixel = 0,
+})
+
+local logoLbl = new("TextLabel", {
+    Parent = introBg,
+    Size = UDim2.new(1, 0, 0, 60),
+    Position = UDim2.new(0, 0, 0.5, -50),
+    BackgroundTransparency = 1,
+    Text = "SKYHUB",
+    Font = Enum.Font.GothamBold,
+    TextSize = 52,
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextXAlignment = Enum.TextXAlignment.Center,
+    TextTransparency = 1,
+})
+
+local versionLbl = new("TextLabel", {
+    Parent = introBg,
+    Size = UDim2.new(1, 0, 0, 20),
+    Position = UDim2.new(0, 0, 0.5, 20),
+    BackgroundTransparency = 1,
+    Text = "v1.0  —  loading...",
+    Font = Enum.Font.Gotham,
+    TextSize = 13,
+    TextColor3 = Color3.fromRGB(48, 120, 220),
+    TextXAlignment = Enum.TextXAlignment.Center,
+    TextTransparency = 1,
+})
+
+local barBg = new("Frame", {
+    Parent = introBg,
+    Size = UDim2.new(0, 260, 0, 3),
+    Position = UDim2.new(0.5, -130, 0.5, 52),
+    BackgroundColor3 = Color3.fromRGB(20, 30, 55),
+    BorderSizePixel = 0,
+})
+corner(barBg, 2)
+
+local barFill = new("Frame", {
+    Parent = barBg,
+    Size = UDim2.new(0, 0, 1, 0),
+    BackgroundColor3 = Color3.fromRGB(48, 120, 220),
+    BorderSizePixel = 0,
+})
+corner(barFill, 2)
+
+task.spawn(function()
+    tw(logoLbl, { TextTransparency = 0 }, 0.6)
+    task.wait(0.3)
+    tw(versionLbl, { TextTransparency = 0 }, 0.5)
+    task.wait(0.4)
+    tw(barFill, { Size = UDim2.new(1, 0, 1, 0) }, 1.2, Enum.EasingStyle.Quad)
+    task.wait(1.4)
+    tw(logoLbl,    { TextTransparency = 1 }, 0.4)
+    tw(versionLbl, { TextTransparency = 1 }, 0.4)
+    tw(barFill,    { BackgroundTransparency = 1 }, 0.4)
+    tw(barBg,      { BackgroundTransparency = 1 }, 0.4)
+    tw(introBg,    { BackgroundTransparency = 1 }, 0.5)
+    task.wait(0.55)
+    introSg:Destroy()
+    buildMainGui()
+end)
+
+-- ══════════════════════════
+--     LOADING OVERLAY
+-- ══════════════════════════
+local function showLoadingScreen(callback)
+    local lsg = new("ScreenGui", {
+        Parent = (gethui and gethui()) or game:GetService("CoreGui"),
+        Name = "skyhub_loading",
+        ZIndexBehavior = Enum.ZIndexBehavior.Global,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+    })
+
+    local bg = new("Frame", {
+        Parent = lsg,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(5, 7, 14),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+    })
+
+    -- fade in background
+    tw(bg, { BackgroundTransparency = 0 }, 0.3)
+
+    local logo = new("TextLabel", {
+        Parent = bg,
+        Size = UDim2.new(1, 0, 0, 50),
+        Position = UDim2.new(0, 0, 0.5, -70),
+        BackgroundTransparency = 1,
+        Text = "SKYHUB",
+        Font = Enum.Font.GothamBold,
+        TextSize = 40,
+        TextColor3 = Color3.fromRGB(48, 120, 220),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTransparency = 1,
+    })
+
+    local statusLbl = new("TextLabel", {
+        Parent = bg,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 0, 0.5, -10),
+        BackgroundTransparency = 1,
+        Text = "Se incarca scriptul...",
+        Font = Enum.Font.Gotham,
+        TextSize = 13,
+        TextColor3 = Color3.fromRGB(195, 215, 255),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTransparency = 1,
+    })
+
+    local barBg2 = new("Frame", {
+        Parent = bg,
+        Size = UDim2.new(0, 260, 0, 3),
+        Position = UDim2.new(0.5, -130, 0.5, 22),
+        BackgroundColor3 = Color3.fromRGB(20, 30, 55),
+        BorderSizePixel = 0,
+        BackgroundTransparency = 1,
+    })
+    corner(barBg2, 2)
+
+    local barFill2 = new("Frame", {
+        Parent = barBg2,
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(48, 120, 220),
+        BorderSizePixel = 0,
+    })
+    corner(barFill2, 2)
+
+    -- animate in
+    task.wait(0.1)
+    tw(logo,      { TextTransparency = 0 }, 0.4)
+    tw(statusLbl, { TextTransparency = 0 }, 0.4)
+    tw(barBg2,    { BackgroundTransparency = 0 }, 0.4)
+
+    -- fake progress bar animatie
+    tw(barFill2, { Size = UDim2.new(0.7, 0, 1, 0) }, 0.8, Enum.EasingStyle.Quad)
+
+    task.wait(0.6)
+
+    -- ruleaza scriptul
+    local ok, err = pcall(callback)
+
+    -- completeaza bara
+    tw(barFill2, { Size = UDim2.new(1, 0, 1, 0) }, 0.3, Enum.EasingStyle.Quad)
+    task.wait(0.35)
+
+    if ok then
+        statusLbl.Text = "Incarcat cu succes ✓"
+        statusLbl.TextColor3 = Color3.fromRGB(60, 220, 100)
+    else
+        statusLbl.Text = "Eroare la incarcare!"
+        statusLbl.TextColor3 = Color3.fromRGB(220, 60, 60)
+        task.wait(1.5)
+    end
+
+    task.wait(0.5)
+
+    -- fade out
+    tw(logo,      { TextTransparency = 1 }, 0.35)
+    tw(statusLbl, { TextTransparency = 1 }, 0.35)
+    tw(barFill2,  { BackgroundTransparency = 1 }, 0.35)
+    tw(barBg2,    { BackgroundTransparency = 1 }, 0.35)
+    tw(bg,        { BackgroundTransparency = 1 }, 0.45)
+    task.wait(0.5)
+    lsg:Destroy()
+end
+
+-- ══════════════════════════
+--        MAIN GUI
+-- ══════════════════════════
+function buildMainGui()
+
+local sg = new("ScreenGui", {
+    Parent = (gethui and gethui()) or game:GetService("CoreGui"),
+    Name = "skyhub_main",
+    ZIndexBehavior = Enum.ZIndexBehavior.Global,
+    ResetOnSpawn = false,
+})
+
+-- main window
+local win = new("Frame", {
+    Parent = sg,
+    Size = UDim2.new(0, 560, 0, 400),
+    Position = UDim2.new(0, 14, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundColor3 = C.bg,
+    BorderSizePixel = 0,
+    ClipsDescendants = true,
+})
+corner(win, 7)
+stroke(win, C.border, 1)
+
+-- topbar
+local top = new("Frame", { Parent = win, Size = UDim2.new(1, 0, 0, 32), BackgroundColor3 = C.sidebar, BorderSizePixel = 0 })
+corner(top, 7)
+new("Frame", { Parent = top, Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1), BackgroundColor3 = C.accent, BorderSizePixel = 0 })
+new("TextLabel", { Parent = top, Size = UDim2.new(0, 140, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = "SKYHUB", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = C.accent, TextXAlignment = Enum.TextXAlignment.Left })
+new("TextLabel", { Parent = top, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 90, 0, 0), BackgroundTransparency = 1, Text = "v1", Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = C.txtmut, TextXAlignment = Enum.TextXAlignment.Left })
+
+-- drag
+local drag, ds, sp = false, nil, nil
+top.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        drag = true; ds = i.Position; sp = win.Position
+        i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then drag = false end end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local d = i.Position - ds
+        win.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
+    end
+end)
+
+-- minimize
+local minimized = false
+local minbtn = new("TextButton", { Parent = top, Size = UDim2.new(0, 22, 0, 16), Position = UDim2.new(1, -28, 0.5, -8), BackgroundColor3 = C.accent, BorderSizePixel = 0, Text = "-", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = C.white, AutoButtonColor = false })
+corner(minbtn, 4)
+minbtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    TweenService:Create(win, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = minimized and UDim2.new(0, 560, 0, 32) or UDim2.new(0, 560, 0, 400) }):Play()
+    minbtn.Text = minimized and "+" or "-"
+end)
+
+-- sidebar
+local sidebar = new("Frame", { Parent = win, Size = UDim2.new(0, 120, 1, -32), Position = UDim2.new(0, 0, 0, 32), BackgroundColor3 = C.sidebar, BorderSizePixel = 0 })
+new("Frame", { Parent = sidebar, Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, -1, 0, 0), BackgroundColor3 = C.border, BorderSizePixel = 0 })
+local tabList = new("Frame", { Parent = sidebar, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1 })
+local tll = Instance.new("UIListLayout"); tll.Padding = UDim.new(0, 2); tll.SortOrder = Enum.SortOrder.LayoutOrder; tll.Parent = tabList
+local tlp = Instance.new("UIPadding"); tlp.PaddingTop = UDim.new(0, 10); tlp.PaddingLeft = UDim.new(0, 6); tlp.PaddingRight = UDim.new(0, 6); tlp.Parent = tabList
+
+-- content
+local content = new("Frame", { Parent = win, Size = UDim2.new(1, -120, 1, -32), Position = UDim2.new(0, 120, 0, 32), BackgroundTransparency = 1, ClipsDescendants = true })
+
+local tabs = {}
+
+local tabDefs = {
+    { name = "Project Delta",  github = "--AICI BAGI GITHUB TAB 1" },
+    { name = "Heavy Rust",     github = "--AICI BAGI GITHUB TAB 2" },
+    { name = "Sniper Or Swap", github = "--AICI BAGI GITHUB TAB 3" },
+    { name = "War Tycoon",     github = "--AICI BAGI GITHUB TAB 4" },
+    { name = "Counter Blox",   github = "--AICI BAGI GITHUB TAB 5" },
+    { name = "The Armory",     github = "--AICI BAGI GITHUB TAB 6" },
+    { name = "Rivals",         github = "--AICI BAGI GITHUB TAB 7" },
+    { name = "Rost",           github = "--AICI BAGI GITHUB TAB 8" },
+} 
+
+local function makeTab(def, idx)
+    local btn = new("TextButton", { Parent = tabList, Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = C.sidebar, BorderSizePixel = 0, Text = "", AutoButtonColor = false })
+    corner(btn, 5)
+    local lbl = new("TextLabel", { Parent = btn, Size = UDim2.new(1, -10, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = def.name, Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = C.txtdim, TextXAlignment = Enum.TextXAlignment.Left })
+    local bar = new("Frame", { Parent = btn, Size = UDim2.new(0, 3, 0, 16), Position = UDim2.new(0, 0, 0.5, -8), BackgroundColor3 = C.accent, BorderSizePixel = 0, BackgroundTransparency = 1 })
+    corner(bar, 3)
+
+    local page = new("ScrollingFrame", { Parent = content, Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = C.accent, CanvasSize = UDim2.new(0,0,0,0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false })
+    local pp = Instance.new("UIPadding"); pp.PaddingTop = UDim.new(0,16); pp.PaddingLeft = UDim.new(0,16); pp.PaddingRight = UDim.new(0,12); pp.PaddingBottom = UDim.new(0,16); pp.Parent = page
+    local pl = Instance.new("UIListLayout"); pl.Padding = UDim.new(0,10); pl.SortOrder = Enum.SortOrder.LayoutOrder; pl.Parent = page
+
+    new("TextLabel", { Parent = page, Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1, Text = def.name, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = C.accent, TextXAlignment = Enum.TextXAlignment.Left })
+
+    local loadBtn = new("TextButton", { Parent = page, Size = UDim2.new(1, 0, 0, 34), BackgroundColor3 = C.accentD, BorderSizePixel = 0, Text = "Load Script", Font = Enum.Font.GothamSemibold, TextSize = 13, TextColor3 = C.txt, AutoButtonColor = false })
+    corner(loadBtn, 5)
+    stroke(loadBtn, C.accent, 1)
+
+    loadBtn.MouseEnter:Connect(function() TweenService:Create(loadBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.accent }):Play() end)
+    loadBtn.MouseLeave:Connect(function() TweenService:Create(loadBtn, TweenInfo.new(0.1), { BackgroundColor3 = C.accentD }):Play() end)
+
+    loadBtn.MouseButton1Click:Connect(function()
+        if def.github:sub(1,2) == "--" then return end
+
+        -- ascunde main gui
+        TweenService:Create(win, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1, Size = UDim2.new(0, 560, 0, 0) }):Play()
+        task.wait(0.28)
+        win.Visible = false
+
+        -- arata loading screen si ruleaza scriptul
+        task.spawn(function()
+            showLoadingScreen(function()
+                loadstring(game:HttpGet(def.github))()
+            end)
+            -- dupa ce loading screen dispare, distruge tot
+            sg:Destroy()
+        end)
+    end)
+
+    local t = { btn=btn, page=page, bar=bar, lbl=lbl }
+    tabs[idx] = t
+
+    btn.MouseButton1Click:Connect(function()
+        for _, v in ipairs(tabs) do
+            v.page.Visible = false
+            TweenService:Create(v.bar, TweenInfo.new(0.12), { BackgroundTransparency = 1 }):Play()
+            TweenService:Create(v.lbl, TweenInfo.new(0.12), { TextColor3 = C.txtdim }):Play()
+            TweenService:Create(v.btn, TweenInfo.new(0.12), { BackgroundColor3 = C.sidebar }):Play()
+        end
+        page.Visible = true
+        TweenService:Create(bar, TweenInfo.new(0.12), { BackgroundTransparency = 0 }):Play()
+        TweenService:Create(lbl, TweenInfo.new(0.12), { TextColor3 = C.txt }):Play()
+        TweenService:Create(btn, TweenInfo.new(0.12), { BackgroundColor3 = C.elem }):Play()
+    end)
+end
+
+for i, def in ipairs(tabDefs) do
+    makeTab(def, i)
+end
+
+tabs[1].page.Visible = true
+tabs[1].bar.BackgroundTransparency = 0
+tabs[1].lbl.TextColor3 = C.txt
+tabs[1].btn.BackgroundColor3 = C.elem
+
+-- open anim
+win.Size = UDim2.new(0, 560, 0, 0)
+win.BackgroundTransparency = 1
+TweenService:Create(win, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Size = UDim2.new(0, 560, 0, 400), BackgroundTransparency = 0 }):Play()
+
+end -- buildMainGui
